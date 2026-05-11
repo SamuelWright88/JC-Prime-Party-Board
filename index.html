@@ -338,7 +338,85 @@
       max-height: none;
     }
   }
+.timer-card {
+  text-align: center;
+  border: 7px solid #fbbf24;
+}
 
+.timer-display {
+  font-size: clamp(6rem, 16vw, 14rem);
+  font-weight: 900;
+  line-height: 1;
+  color: #ef4444;
+  text-shadow: 6px 6px 0 #fde68a;
+  margin: 20px 0;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.timer-display.warning {
+  color: #f97316;
+  animation: timerPulse 0.8s infinite alternate;
+}
+
+.timer-display.danger {
+  color: #dc2626;
+  animation: timerShake 0.35s infinite;
+}
+
+.timer-display.final {
+  color: #b91c1c;
+  animation: timerFinal 0.18s infinite;
+}
+
+@keyframes timerPulse {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes timerShake {
+  0% {
+    transform: scale(1.08) rotate(-2deg);
+  }
+
+  50% {
+    transform: scale(1.16) rotate(2deg);
+  }
+
+  100% {
+    transform: scale(1.08) rotate(-2deg);
+  }
+}
+
+@keyframes timerFinal {
+  0% {
+    transform: scale(1.15) rotate(-4deg);
+  }
+
+  50% {
+    transform: scale(1.28) rotate(4deg);
+  }
+
+  100% {
+    transform: scale(1.15) rotate(-4deg);
+  }
+}
+
+.timer-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.timer-buttons button {
+  font-size: 1.25rem;
+  padding: 14px 22px;
+}
   @media (max-width: 1000px) {
     .teams,
     .results-grid {
@@ -425,7 +503,7 @@
           <ul id="yellowTeam"></ul>
         </div>
       </div>
-
+      
       <div class="card" style="margin-top: 24px;">
         <h2>Mini-Game Results</h2>
         <div class="results-grid">
@@ -464,7 +542,11 @@
 
 <script>
 const colours = ["Red", "Green", "Blue", "Yellow"];
-
+  
+let timerSeconds = 30;
+let timerRemaining = 30;
+let timerInterval = null;
+  
 let state = {
   players: [],
   round: 1,
@@ -860,7 +942,75 @@ function getColourValue(colour) {
 }
 
 loadState();
+
+function setTimer(seconds) {
+  timerSeconds = seconds;
+  timerRemaining = seconds;
+
+  pauseTimer();
+  renderTimer();
+}
+
+function startTimer() {
+  if (timerInterval) return;
+
+  timerInterval = setInterval(() => {
+    if (timerRemaining > 0) {
+      timerRemaining--;
+      renderTimer();
+    }
+
+    if (timerRemaining <= 0) {
+      pauseTimer();
+
+      const timerDisplay = document.getElementById("timerDisplay");
+
+      timerDisplay.textContent = "TIME!";
+      timerDisplay.classList.remove("warning", "danger");
+      timerDisplay.classList.add("final");
+    }
+  }, 1000);
+}
+
+function pauseTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+
+function resetTimer() {
+  pauseTimer();
+
+  timerRemaining = timerSeconds;
+
+  renderTimer();
+}
+
+function renderTimer() {
+  const timerDisplay = document.getElementById("timerDisplay");
+
+  const minutes = Math.floor(timerRemaining / 60);
+  const seconds = timerRemaining % 60;
+
+  timerDisplay.textContent =
+    String(minutes).padStart(2, "0") +
+    ":" +
+    String(seconds).padStart(2, "0");
+
+  timerDisplay.classList.remove("warning", "danger", "final");
+
+  if (timerRemaining <= 5 && timerRemaining > 0) {
+    timerDisplay.classList.add("final");
+  }
+  else if (timerRemaining <= 10 && timerRemaining > 0) {
+    timerDisplay.classList.add("danger");
+  }
+  else if (timerRemaining <= 30 && timerRemaining > 0) {
+    timerDisplay.classList.add("warning");
+  }
+}
+  
 renderAll();
+  renderTimer();
 
 if (state.players.length > 0 && state.round > 1) {
   document.getElementById("setupScreen").classList.remove("active");
